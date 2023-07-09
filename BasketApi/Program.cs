@@ -12,6 +12,9 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IBasketService, BasketService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 
+// Added as Singleton to be reused accross requests
+builder.Services.AddSingleton<HttpClient>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

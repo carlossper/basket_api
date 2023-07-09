@@ -1,6 +1,12 @@
 ﻿namespace BasketApi.Exceptions
 {
-    public class BasketApiBaseException
+    /// <summary>
+    /// Base Exception for BasketAPI's error handling.
+    /// </summary>
+    public class BasketApiBaseException : Exception
     {
+        public BasketApiBaseException(string errorMessage) : base (errorMessage) { }
+
+        public BasketApiBaseException(string message, Exception innerException) : base (message, innerException) { }
     }
 }
