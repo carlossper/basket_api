@@ -24,7 +24,7 @@
         /// <summary>
         /// Product's instance Size.
         /// </summary>
-        public int Size { get; set; }
+        public string? Size { get; set; }
 
         /// <summary>
         /// Product's instance review Stars (I GUESS).

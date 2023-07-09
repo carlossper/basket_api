@@ -16,6 +16,8 @@ namespace BasketApi.Services.Implementations
         private readonly List<ProductModel>? _products;
 
         // TODO: Remove hard dependency on HttpClient here.
+        // TODO: Remove all meaningful warnings
+        // TODO: Refactor calls to use GetAllProductsByRankDescending method : DONE
         // Implemented like this for ProductService validation only.
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
@@ -24,6 +26,7 @@ namespace BasketApi.Services.Implementations
         {
             _httpClient = httpClient;
             _configuration = configuration;
+            _products = new List<ProductModel>();
         }
 
         /// <summary>
@@ -35,24 +38,32 @@ namespace BasketApi.Services.Implementations
         {
             try
             {
-                // TODO: Encapsulate authentication even further
-                var token = await GetAuthenticationToken();
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                var response = await _httpClient.GetAsync("https://azfun-impact-code-challenge-api.azurewebsites.net/api/GetAllProducts");
-                var products = Enumerable.Empty<ProductModel>();
-                if (response.IsSuccessStatusCode)
+                if (_products.Count == 0)
                 {
-                    var content = await response.Content.ReadAsStringAsync();
-                    products = JsonConvert.DeserializeObject<IEnumerable<ProductModel>>(content);
-                    return products is null ? Enumerable.Empty<ProductModel>() : products.Take(100);
+                    await GetAllProductsByRankDescending();
                 }
+
+                return _products.Take(100);
             }
             catch (HttpRequestException ex)
             {
                 throw new BasketApiBaseException("Failed to retrieve the top 100 ranked products from the challenge's API.", ex);
             }
+        }
 
-            return Enumerable.Empty<ProductModel>();
+        /// <summary>
+        /// Gets a ProductModel instance for the provided <paramref name="productId"/>
+        /// </summary>
+        /// <param name="productId">The Product ID to search for. </param>
+        /// <returns>The ProductModel instance for productId</returns>
+        public async Task<ProductModel> GetProductById(int productId)
+        {
+            if (_products.Count == 0)
+            {
+                await GetAllProductsByRankDescending();
+            }
+
+            return _products.FirstOrDefault(p => p.Id == productId);
         }
 
         /// <summary>
@@ -64,37 +75,24 @@ namespace BasketApi.Services.Implementations
         public async Task<IEnumerable<ProductModel>> GetPaginatedProductsSortedByPrice(int page, int pageSize)
         {
             pageSize = GetPageSize(pageSize);
-
             try
             {
-                // TODO: Encapsulate authentication even further
-                var token = await GetAuthenticationToken();
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                var response = await _httpClient.GetAsync("https://azfun-impact-code-challenge-api.azurewebsites.net/api/GetAllProducts");
-
-                if (response.IsSuccessStatusCode)
+                if (_products.Count == 0)
                 {
-                    var content = await response.Content.ReadAsStringAsync();
-                    var products = JsonConvert.DeserializeObject<IEnumerable<ProductModel>>(content);
-
-                    var startIndex = (page - 1) * pageSize;
-                    var paginatedProducts = products.OrderBy(p => p.Price).Skip(startIndex).Take(pageSize);
-
-                    return paginatedProducts;
+                    await GetAllProductsByPriceAscending();
                 }
 
-                response.EnsureSuccessStatusCode();
+                var startIndex = (page - 1) * pageSize;
+                return _products.Skip(startIndex).Take(pageSize);
             }
             catch (HttpRequestException ex)
             {
                 throw new BasketApiBaseException("HTTP Request failed to retrieve paginated products from the challenge API.", ex);
             }
-
-            return Enumerable.Empty<ProductModel>();
         }
 
         /// <summary>
-        /// Retreives the top <paramref name="count"/> cheapest product from IMPACT's GetAllProducts endpoint.
+        /// Retreives the top <paramref name="count"/> cheapest product from IMPACT's GetAllProductsByRankDescending endpoint.
         /// </summary>
         /// <param name="count"></param>
         /// <returns>IEnumerable with cheapest products up to <paramref name="count"/>. </returns>
@@ -103,17 +101,12 @@ namespace BasketApi.Services.Implementations
         {
             try
             {
-                // TODO : Move this to a constant and think if it makes sense to reuse this call 
-                var response = await _httpClient.GetAsync("https://azfun-impact-code-challenge-api.azurewebsites.net/api/GetAllProducts");
-
-                if (response.IsSuccessStatusCode)
+                if (_products.Count == 0)
                 {
-                    var content = await response.Content.ReadAsStringAsync();
-                    var products = JsonConvert.DeserializeObject<IEnumerable<ProductModel>>(content);
-                    return products.OrderBy(p => p.Price).Take(count);
+                    await GetAllProductsByPriceAscending();
                 }
 
-                response.EnsureSuccessStatusCode();
+                return _products.Take(count);
             }
             catch (HttpRequestException ex)
             {
@@ -124,6 +117,66 @@ namespace BasketApi.Services.Implementations
         }
 
         #region Private methods
+        /// <summary>
+        /// Gets all 10000 Products from the challenge's API and stores them in the _products lists ordered ascending by Stars/Rank.
+        /// </summary>
+        /// <returns></returns>
+        private async Task GetAllProductsByRankDescending()
+        {
+            try
+            {
+                // TODO: Encapsulate authentication even further
+                var token = await GetAuthenticationToken();
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                var response = await _httpClient.GetAsync("https://azfun-impact-code-challenge-api.azurewebsites.net/api/GetAllProducts");
+                var products = Enumerable.Empty<ProductModel>();
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    _products.AddRange(JsonConvert.DeserializeObject<IEnumerable<ProductModel>>(content).OrderByDescending(p => p.Stars));
+                }
+                else
+                {
+                    string errorContent = await response.Content.ReadAsStringAsync();
+                    throw new BasketApiBaseException("Failed to retrieve products from the challenge API.");
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new BasketApiBaseException("Failed to retrieve and set all Products from the challenge's API.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Gets all 10000 Products from the challenge's API and stores them in the _products lists odered by Price.
+        /// </summary>
+        private async Task GetAllProductsByPriceAscending()
+        {
+            try
+            {
+                // TODO: Encapsulate authentication even further
+                var token = await GetAuthenticationToken();
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                var response = await _httpClient.GetAsync("https://azfun-impact-code-challenge-api.azurewebsites.net/api/GetAllProducts");
+                var products = Enumerable.Empty<ProductModel>();
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var prodsTemp = JsonConvert.DeserializeObject<IEnumerable<ProductModel>>(content).OrderBy(p => p.Price);    
+                    _products.AddRange(prodsTemp);
+                }
+                else
+                {
+                    string errorContent = await response.Content.ReadAsStringAsync();
+                    throw new BasketApiBaseException("Failed to retrieve products from the challenge API.");
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new BasketApiBaseException("Failed to retrieve and set all Products from the challenge's API.", ex);
+            }
+        }
+
         /// <summary>
         /// Gets authentication Bearer token for my email.
         /// </summary>

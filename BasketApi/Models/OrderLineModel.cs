@@ -19,7 +19,7 @@
         /// <summary>
         /// The Product's Price per unit.
         /// </summary>
-        public decimal ProductUnitPrice { get; set; }
+        public double? ProductUnitPrice { get; set; }
 
         /// <summary>
         /// The Product's size.

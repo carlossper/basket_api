@@ -8,18 +8,22 @@ namespace BasketApi.Services.Contracts
     public interface IBasketService
     {
         /// <summary>
-        /// Contract signature for adding <paramref name="product"/> to a user's basket.
+        /// Contract signature for Creating a new BasketModel entity.
         /// </summary>
-        /// <param name="product">The Product DTO to be added to the basket. </param>
-        /// <returns>The updated Basket DTO. </returns>
-        Task<BasketModel> AddProduct(ProductModel product);
+        Task<Guid> CreateBasket();
 
         /// <summary>
-        /// Contract signature for removing the Product associated with <paramref name="productId"/> 
-        /// from a user's basket.
+        /// Contract signature for retrieving a BasketModel from the baskets collection from its <paramref name="basketId"/>
         /// </summary>
-        /// <param name="product">The ProductID for the product to be removed. </param>
-        /// <returns>The updated Basket DTO. </returns>
-        Task<BasketModel> RemoveProduct(int productId);
+        /// <param name="basketId"> </param>
+        Task<BasketModel> GetBasketById(Guid basketId);
+
+        /// <summary>
+        /// Contract signature for Adding a certain <paramref name="quantity"/> of a Product to a Basket.
+        /// </summary>
+        /// <param name="basketId">The desired Basket ID. </param>
+        /// <param name="productId">The desired Product ID to add. </param>
+        /// <param name="quantity">The Product quantity to be added. </param>
+        Task AddProductToBasket(Guid basketId, int productId, int quantity);
     }
 }

@@ -1,4 +1,5 @@
-﻿using BasketApi.Models;
+﻿using BasketApi.Exceptions;
+using BasketApi.Models;
 using BasketApi.Services.Contracts;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,18 +16,14 @@ namespace BasketApi.Controllers
             _basketService = basketService;
         }
 
-        [HttpPost]
-        public async Task<BasketModel> AddProductToBasket([FromBody] ProductModel product)
-        {
-            var basket = await _basketService.AddProduct(product);
-            return basket;
-        }
+        //[HttpGet("{basketId}")]
 
-        [HttpDelete("{productId}")]
-        public async Task<BasketModel> RemoveProductFromBasket(int productId)
-        {
-            var basket = await _basketService.RemoveProduct(productId);
-            return basket;
-        } 
+        //[HttpPost("{basketId}/products/{productId}")]
+
+        //[HttpDelete("{basketId}/products/{productId}")]
+
+        //[HttpPut("{basketId}/products/{productId}")]
+
+        //[HttpPost("{basketId}/submit")]
     }
 }

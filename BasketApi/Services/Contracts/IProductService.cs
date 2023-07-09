@@ -22,5 +22,11 @@ namespace BasketApi.Services.Contracts
         /// Contract signature for retrieving the first <paramref name="count"/> ranked Products from IMPACPT API.
         /// </summary>
         Task<IEnumerable<ProductModel>> GetCheapestProducts(int count);
+
+        /// <summary>
+        /// Contract signature for retrieving a ProductModel instance from its ID.
+        /// </summary>
+        /// <param name="id">The Id. </param>
+        Task<ProductModel> GetProductById(int id);
     }
 }
