@@ -14,7 +14,7 @@
         /// <summary>
         /// Product's instance Name.
         /// </summary>
-        public string? Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         /// <summary>
         /// Product's instance Price.
@@ -24,11 +24,19 @@
         /// <summary>
         /// Product's instance Size.
         /// </summary>
-        public string? Size { get; set; }
+        public string Size { get; set; } = string.Empty;
 
         /// <summary>
-        /// Product's instance review Stars (I GUESS).
+        /// Product's instance review Stars.
         /// </summary>
-        public int Stars { get; set; } 
+        public int Stars { get; set; }
+
+        /// <summary>
+        /// String representation of ProductModel.
+        /// </summary>
+        public override string ToString()
+        {
+            return $"Product: Id={Id}, Name={Name}, Price={Price}, Size={Size}, Stars={Stars}";
+        }
     }
 }

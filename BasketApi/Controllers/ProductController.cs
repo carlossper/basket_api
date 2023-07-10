@@ -1,4 +1,5 @@
-﻿using BasketApi.Models;
+﻿using BasketApi.Exceptions;
+using BasketApi.Models;
 using BasketApi.Services.Contracts;
 using Microsoft.AspNetCore.Mvc;
 using System.Reflection.Metadata.Ecma335;
@@ -9,11 +10,33 @@ namespace BasketApi.Controllers
     [Route("api/[controller]")]
     public class ProductController : ControllerBase
     {
+        //TODO: Add logging and error handling at Controller level
+        //Suggestion: Add MediatR to separate concerns
         private readonly IProductService _productService;
 
         public ProductController(IProductService productService)
         {
             _productService = productService;
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetProductById(int id)
+        {
+            try
+            {
+                var product = await _productService.GetProductById(id);
+                if (product == null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(product);
+            }
+            catch (BasketApiBaseException ex)
+            {
+                // Log the exception message once logging is added
+                return StatusCode(500, "Could");
+            }
         }
 
         [HttpGet("highest-ranked")]

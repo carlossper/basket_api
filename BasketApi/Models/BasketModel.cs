@@ -10,6 +10,6 @@
         /// <summary>
         /// Basket's order's collection.
         /// </summary>
-        public List<OrderLineModel> OrderLines { get; set; }
+        public List<OrderLineModel> OrderLines { get; set; } = new List<OrderLineModel>();
     }
 }

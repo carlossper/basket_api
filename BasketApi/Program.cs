@@ -22,6 +22,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseDeveloperExceptionPage();
 }
 
 app.UseHttpsRedirection();
@@ -36,3 +37,6 @@ app.MapGet("/", async (HttpContext context) =>
 });
 
 app.Run();
+
+// As a minimal API approach is used, Program is inaccessible for Integration testing
+public partial class Program { }

@@ -7,21 +7,60 @@ namespace BasketApi.Services.Implementations
 {
     public class BasketService : IBasketService
     {
-        private readonly ConcurrentDictionary<Guid, BasketModel> _baskets;
+        // Static for persistence accross instances of BasketService
+        private static readonly Dictionary<Guid, BasketModel> _baskets = new Dictionary<Guid, BasketModel>();
         private readonly IProductService _productService;
 
         public BasketService(IProductService productService)
         {
-            _baskets = new ConcurrentDictionary<Guid, BasketModel>();
             _productService = productService;
         }
 
-        public Task AddProductToBasket(Guid basketId, int productId, int quantity)
+        /// <summary>
+        /// Attempts to add <paramref name="quantity"/> amount of a Product for the provided <paramref name="productId"/> to a Basket for the provided <paramref name="basketId"/>.
+        /// </summary>
+        /// <param name="basketId">The basket GUID. </param>
+        /// <param name="productId">The Product ID. </param>
+        /// <param name="quantity">The amount of product to be added. </param>
+        /// <exception cref="BasketApiBaseException"></exception>
+        public async Task<BasketModel> AddProductToBasket(Guid basketId, int productId, int quantity)
         {
-            throw new NotImplementedException();
+            BasketModel basket = GetBasketById(basketId);
+
+            var product = await _productService.GetProductById(productId);
+            if (product == null)
+            {
+                throw new BasketApiBaseException($"Product with ID {productId} not found.");
+            }
+
+            var existingOrderLine = basket.OrderLines.FirstOrDefault(ol => ol.ProductId == productId);
+            if (existingOrderLine != null)
+            {
+                existingOrderLine.Quantity += quantity;
+                existingOrderLine.TotalPrice = (decimal)existingOrderLine.Quantity * (decimal)existingOrderLine.ProductUnitPrice;
+            }
+            else
+            {
+                var newOrderLine = new OrderLineModel
+                {
+                    ProductId = product.Id,
+                    ProductName = product.Name,
+                    ProductUnitPrice = product.Price,
+                    ProductSize = product.Size,
+                    Quantity = quantity,
+                    TotalPrice = (decimal)(product.Price * quantity)
+                };
+                basket.OrderLines.Add(newOrderLine);
+            }
+
+            return basket;
         }
 
-        public async Task<Guid> CreateBasket()
+        /// <summary>
+        /// Creates a new BasketModel instance with a unique GUID
+        /// </summary>
+        /// <returns>The GUID of the created BasketModel instance. </returns>
+        public Guid CreateBasket()
         {
             var basket = new BasketModel
             {
@@ -35,7 +74,24 @@ namespace BasketApi.Services.Implementations
             return basket.Id;
         }
 
-        public async Task<BasketModel> GetBasketById(Guid basketId)
+        /// <summary>
+        /// Adds a collection of OrderLines to a BasketModel.
+        /// </summary>
+        /// <param name="basketId">The basket GUID. </param>
+        /// <param name="orderLines">The collection of OrderLines. </param>
+        public void AddOrderLinesToBasket(Guid basketId, List<OrderLineModel> orderLines)
+        {
+            var basket = GetBasketById(basketId);
+            basket.OrderLines.AddRange(orderLines);
+        }
+
+        /// <summary>
+        /// Attempts to retrieve the BasketModel instance from the _baskets collection from a provided ID.
+        /// </summary>
+        /// <param name="basketId">The Basket GUID. </param>
+        /// <returns></returns>
+        /// <exception cref="BasketApiBaseException"></exception>
+        public BasketModel GetBasketById(Guid basketId)
         {
             if (_baskets.TryGetValue(basketId, out var basket))
             {
@@ -46,11 +102,5 @@ namespace BasketApi.Services.Implementations
                 throw new BasketApiBaseException($"BasketModel with ID {basketId} not found.");
             }
         }
-
-        public Task<IEnumerable<ProductModel>> GetCheapestProducts()
-        {
-            throw new NotImplementedException();
-        }
-
     }
 }

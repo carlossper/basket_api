@@ -38,7 +38,7 @@ namespace BasketApi.Services.Implementations
         {
             try
             {
-                if (_products.Count == 0)
+                if (_products is null || _products.Count == 0)
                 {
                     await GetAllProductsByRankDescending();
                 }
@@ -58,7 +58,7 @@ namespace BasketApi.Services.Implementations
         /// <returns>The ProductModel instance for productId</returns>
         public async Task<ProductModel> GetProductById(int productId)
         {
-            if (_products.Count == 0)
+            if (_products is null || _products.Count == 0)
             {
                 await GetAllProductsByRankDescending();
             }
@@ -77,7 +77,7 @@ namespace BasketApi.Services.Implementations
             pageSize = GetPageSize(pageSize);
             try
             {
-                if (_products.Count == 0)
+                if (_products is null || _products.Count == 0)
                 {
                     await GetAllProductsByPriceAscending();
                 }
@@ -101,7 +101,7 @@ namespace BasketApi.Services.Implementations
         {
             try
             {
-                if (_products.Count == 0)
+                if (_products is null || _products.Count == 0)
                 {
                     await GetAllProductsByPriceAscending();
                 }
@@ -112,8 +112,6 @@ namespace BasketApi.Services.Implementations
             {
                 throw new BasketApiBaseException("Failed to retrieve cheapest products from the challenge API.", ex);
             }
-
-            return Enumerable.Empty<ProductModel>();
         }
 
         #region Private methods
@@ -188,12 +186,10 @@ namespace BasketApi.Services.Implementations
                 var loginEndpointUrl = "https://azfun-impact-code-challenge-api.azurewebsites.net/api/Login";
                 var email = "c_m_per@hotmail.com";
 
-                // Create a JSON payload with my email
                 var payload = new { Email = email };
                 var jsonPayload = JsonConvert.SerializeObject(payload);
                 var httpContent = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
-                // Send the POST request to the Login endpoint
                 var response = await _httpClient.PostAsync(loginEndpointUrl, httpContent);
 
                 if (response.IsSuccessStatusCode)

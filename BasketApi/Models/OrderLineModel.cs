@@ -14,7 +14,7 @@
         /// <summary>
         /// The Product's Name.
         /// </summary>
-        public string ProductName { get; set; }
+        public string ProductName { get; set; } = string.Empty;
 
         /// <summary>
         /// The Product's Price per unit.
@@ -24,7 +24,7 @@
         /// <summary>
         /// The Product's size.
         /// </summary>
-        public string ProductSize { get; set; }
+        public string ProductSize { get; set; } = string.Empty;
 
         /// <summary>
         /// The Product's amount.
