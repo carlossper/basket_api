@@ -19,7 +19,7 @@
         /// <summary>
         /// Product's instance Price.
         /// </summary>
-        public double? Price { get; set; }
+        public double Price { get; set; }
 
         /// <summary>
         /// Product's instance Size.

@@ -34,6 +34,6 @@
         /// <summary>
         /// The Order's total price.
         /// </summary>
-        public decimal TotalPrice { get; set; }
+        public double? TotalPrice { get; set; }
     }
 }

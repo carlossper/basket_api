@@ -33,11 +33,11 @@ namespace BasketApi.Services.Implementations
                 throw new BasketApiBaseException($"Product with ID {productId} not found.");
             }
 
-            var existingOrderLine = basket.OrderLines.FirstOrDefault(ol => ol.ProductId == productId);
+            OrderLineModel? existingOrderLine = basket.OrderLines.FirstOrDefault(ol => ol.ProductId == productId);
             if (existingOrderLine != null)
             {
                 existingOrderLine.Quantity += quantity;
-                existingOrderLine.TotalPrice = (decimal)existingOrderLine.Quantity * (decimal)existingOrderLine.ProductUnitPrice;
+                existingOrderLine.TotalPrice = (existingOrderLine.Quantity * existingOrderLine.ProductUnitPrice);
             }
             else
             {
@@ -48,7 +48,7 @@ namespace BasketApi.Services.Implementations
                     ProductUnitPrice = product.Price,
                     ProductSize = product.Size,
                     Quantity = quantity,
-                    TotalPrice = (decimal)(product.Price * quantity)
+                    TotalPrice = product.Price * quantity
                 };
                 basket.OrderLines.Add(newOrderLine);
             }
@@ -64,8 +64,7 @@ namespace BasketApi.Services.Implementations
         {
             var basket = new BasketModel
             {
-                Id = Guid.NewGuid(),
-                OrderLines = new List<OrderLineModel>()
+                Id = Guid.NewGuid()
             };
 
             // Map the new BasketId to the BasketModel instance. 

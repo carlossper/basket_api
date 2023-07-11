@@ -13,7 +13,7 @@ namespace BasketApi.Services.Implementations
     /// </summary>
     public class ProductService : IProductService
     {
-        private readonly List<ProductModel>? _products;
+        private List<ProductModel>? _products;
 
         // TODO: Remove hard dependency on HttpClient here.
         // TODO: Remove all meaningful warnings
@@ -23,6 +23,7 @@ namespace BasketApi.Services.Implementations
         private readonly IConfiguration _configuration;
 
         public ProductService(HttpClient httpClient, IConfiguration configuration)
+
         {
             _httpClient = httpClient;
             _configuration = configuration;
@@ -40,14 +41,14 @@ namespace BasketApi.Services.Implementations
             {
                 if (_products is null || _products.Count == 0)
                 {
-                    await GetAllProductsByRankDescending();
+                    await GetAllProducts();
                 }
 
-                return _products.Take(100);
+                return _products.OrderByDescending(p => p.Stars).Take(100);
             }
             catch (HttpRequestException ex)
             {
-                throw new BasketApiBaseException("Failed to retrieve the top 100 ranked products from the challenge's API.", ex);
+                throw new BasketApiBaseException("Failed to retrieve the top 100 ranked products.", ex);
             }
         }
 
@@ -60,10 +61,17 @@ namespace BasketApi.Services.Implementations
         {
             if (_products is null || _products.Count == 0)
             {
-                await GetAllProductsByRankDescending();
+                await GetAllProducts();
             }
 
-            return _products.FirstOrDefault(p => p.Id == productId);
+            ProductModel product = _products.FirstOrDefault(p => p.Id == productId);
+
+            if (product is null)
+            {
+                throw new NotFoundException($"Could not find Product with ID: {productId}.");
+            }
+
+            return product;
         }
 
         /// <summary>
@@ -79,15 +87,16 @@ namespace BasketApi.Services.Implementations
             {
                 if (_products is null || _products.Count == 0)
                 {
-                    await GetAllProductsByPriceAscending();
+                    await GetAllProducts();
                 }
 
-                var startIndex = (page - 1) * pageSize;
-                return _products.Skip(startIndex).Take(pageSize);
+                int startIndex = (page - 1) * pageSize;
+                return _products.OrderBy(p => p.Price).Skip(startIndex).Take(pageSize);
             }
             catch (HttpRequestException ex)
             {
-                throw new BasketApiBaseException("HTTP Request failed to retrieve paginated products from the challenge API.", ex);
+                // TODO: Log exception details
+                return Enumerable.Empty<ProductModel>();
             }
         }
 
@@ -103,75 +112,45 @@ namespace BasketApi.Services.Implementations
             {
                 if (_products is null || _products.Count == 0)
                 {
-                    await GetAllProductsByPriceAscending();
+                    await GetAllProducts();
                 }
 
-                return _products.Take(count);
+                return _products.OrderBy(p => p.Price).Take(count);
             }
             catch (HttpRequestException ex)
             {
-                throw new BasketApiBaseException("Failed to retrieve cheapest products from the challenge API.", ex);
+                // TODO: Log exception details
+                return Enumerable.Empty<ProductModel>();
             }
         }
 
         #region Private methods
         /// <summary>
-        /// Gets all 10000 Products from the challenge's API and stores them in the _products lists ordered ascending by Stars/Rank.
+        /// Gets all Products from /GetAllProducts endpoint. 
         /// </summary>
-        /// <returns></returns>
-        private async Task GetAllProductsByRankDescending()
+        /// <exception cref="BasketApiBaseException"></exception>
+        private async Task GetAllProducts()
         {
             try
             {
-                // TODO: Encapsulate authentication even further
-                var token = await GetAuthenticationToken();
+                string token = await GetAuthenticationToken();
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                var response = await _httpClient.GetAsync("https://azfun-impact-code-challenge-api.azurewebsites.net/api/GetAllProducts");
-                var products = Enumerable.Empty<ProductModel>();
-                if (response.IsSuccessStatusCode)
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-                    _products.AddRange(JsonConvert.DeserializeObject<IEnumerable<ProductModel>>(content).OrderByDescending(p => p.Stars));
-                }
-                else
-                {
-                    string errorContent = await response.Content.ReadAsStringAsync();
-                    throw new BasketApiBaseException("Failed to retrieve products from the challenge API.");
-                }
-            }
-            catch (HttpRequestException ex)
-            {
-                throw new BasketApiBaseException("Failed to retrieve and set all Products from the challenge's API.", ex);
-            }
-        }
 
-        /// <summary>
-        /// Gets all 10000 Products from the challenge's API and stores them in the _products lists odered by Price.
-        /// </summary>
-        private async Task GetAllProductsByPriceAscending()
-        {
-            try
-            {
-                // TODO: Encapsulate authentication even further
-                var token = await GetAuthenticationToken();
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
                 var response = await _httpClient.GetAsync("https://azfun-impact-code-challenge-api.azurewebsites.net/api/GetAllProducts");
-                var products = Enumerable.Empty<ProductModel>();
+
                 if (response.IsSuccessStatusCode)
                 {
-                    var content = await response.Content.ReadAsStringAsync();
-                    var prodsTemp = JsonConvert.DeserializeObject<IEnumerable<ProductModel>>(content).OrderBy(p => p.Price);    
-                    _products.AddRange(prodsTemp);
+                    string content = await response.Content.ReadAsStringAsync();
+                    _products = JsonConvert.DeserializeObject<List<ProductModel>>(content);
                 }
                 else
                 {
-                    string errorContent = await response.Content.ReadAsStringAsync();
                     throw new BasketApiBaseException("Failed to retrieve products from the challenge API.");
                 }
             }
             catch (HttpRequestException ex)
             {
-                throw new BasketApiBaseException("Failed to retrieve and set all Products from the challenge's API.", ex);
+                throw new BasketApiBaseException("Failed to retrieve and set all products from the challenge's API.", ex);
             }
         }
 
@@ -183,24 +162,23 @@ namespace BasketApi.Services.Implementations
         {
             try
             {
-                var loginEndpointUrl = "https://azfun-impact-code-challenge-api.azurewebsites.net/api/Login";
-                var email = "c_m_per@hotmail.com";
+                string loginEndpointUrl = "https://azfun-impact-code-challenge-api.azurewebsites.net/api/Login";
+                string email = "c_m_per@hotmail.com";
 
                 var payload = new { Email = email };
-                var jsonPayload = JsonConvert.SerializeObject(payload);
+                string jsonPayload = JsonConvert.SerializeObject(payload);
                 var httpContent = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
-                var response = await _httpClient.PostAsync(loginEndpointUrl, httpContent);
+                HttpResponseMessage response = await _httpClient.PostAsync(loginEndpointUrl, httpContent);
 
-                if (response.IsSuccessStatusCode)
+                if (!response.IsSuccessStatusCode)
                 {
-                    var responseContent = await response.Content.ReadAsStringAsync();
-
-                    var token = JObject.Parse(responseContent)["token"].Value<string>();
-
-                    return token;
+                    throw new BasketApiBaseException("HTTP Request failed to retrieve the authentication token.");
                 }
-                else throw new BasketApiBaseException("HTTP Request failed to retrieve the authentication token.");
+
+                string responseContent = await response.Content.ReadAsStringAsync();
+
+                return JObject.Parse(responseContent)["token"].Value<string>();
             }
             catch (HttpRequestException ex)
             {

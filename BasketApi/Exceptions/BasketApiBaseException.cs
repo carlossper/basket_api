@@ -5,6 +5,8 @@
     /// </summary>
     public class BasketApiBaseException : Exception
     {
+        public BasketApiBaseException() { }
+
         public BasketApiBaseException(string errorMessage) : base (errorMessage) { }
 
         public BasketApiBaseException(string message, Exception innerException) : base (message, innerException) { }
