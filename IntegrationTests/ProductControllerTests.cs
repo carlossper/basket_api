@@ -3,37 +3,30 @@ using System.Net.Http.Json;
 using System.Net;
 using BasketApi.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
+using System.ComponentModel;
+using DescriptionAttribute = Microsoft.VisualStudio.TestTools.UnitTesting.DescriptionAttribute;
 
 namespace IntegrationTests
 {
     [TestClass]
-    public class ProductControllerTests
+    public class ProductControllerTests : ControllerTestsBase
     {
-        private WebApplicationFactory<Program> _factory;
-        private HttpClient _client;
-
-        [TestInitialize]
-        public void TestInitialize()
-        {
-            _factory = new WebApplicationFactory<Program>();
-            _client = _factory.CreateClient();
-        }
-
         [TestMethod]
-        //[DataRow()] Idea would be to add a JSON representation of each product as a resource and pass it for several use cases.
-        public async Task GetProductByIdSuccess()
+        [DataRow(50, "White Denim Coat, Size 5", 95.77, "5", 3)]
+        [DataRow(100, "Yellow Denim Shirt, Size 37", 81.98, "37", 4)] 
+        [DataRow(200, "White Velvet Jacket, Size 51", 97.26, "51", 5)]
+        public async Task GetProductByIdSuccess(int testProductId, string expectedName, double expectedPrice, string expectedSize, int expectedRank)
         {
-            int productId = 50;
             var expectedProduct = new ProductModel
             {
-                Id = productId,
-                Name = "White Denim Coat, Size 5",
-                Price = 95.77,
-                Size = "5",
-                Stars = 3
+                Id = testProductId,
+                Name = expectedName,
+                Price = expectedPrice,
+                Size = expectedSize,
+                Stars = expectedRank
             };
 
-            var response = await _client.GetAsync($"/api/Product/{productId}");
+            var response = await Client.GetAsync($"/api/Product/{testProductId}");
 
             // Validate HTTP Code
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
@@ -41,17 +34,21 @@ namespace IntegrationTests
             var actualProduct = await response.Content.ReadFromJsonAsync<ProductModel>();
             Assert.IsNotNull(actualProduct);
             Assert.AreEqual(expectedProduct.Id, actualProduct.Id);
-            Assert.AreEqual(expectedProduct.Name, actualProduct.Name);
+            Assert.AreEqual(expectedProduct.Name, actualProduct.Name, actualProduct.ToString());
             Assert.AreEqual(expectedProduct.Price, actualProduct.Price);
             Assert.AreEqual(expectedProduct.Size, actualProduct.Size);
             Assert.AreEqual(expectedProduct.Stars, actualProduct.Stars);
         }
 
-        [TestCleanup]
-        public void TestCleanup()
+        [TestMethod]
+        [DataRow(10005, HttpStatusCode.InternalServerError)]
+        [Description("Product ID over 10.000 => Internal Server Error is returned")]
+        public async Task GetProductByIdStatusErrors(int testProductId, HttpStatusCode expectedStatusCode)
         {
-            _client.Dispose();
-            _factory.Dispose();
+            var response = await Client.GetAsync($"/api/Product/{testProductId}");
+
+            // Validate HTTP Code
+            Assert.AreEqual(expectedStatusCode, response.StatusCode);
         }
     }
 }

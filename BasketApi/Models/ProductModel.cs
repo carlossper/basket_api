@@ -36,7 +36,7 @@
         /// </summary>
         public override string ToString()
         {
-            return $"Product: Id={Id}, Name={Name}, Price={Price}, Size={Size}, Stars={Stars}";
+            return $"Name={Name}, Price={Price}, Size={Size}, Stars={Stars}";
         }
     }
 }
