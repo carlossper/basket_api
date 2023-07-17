@@ -13,6 +13,7 @@ namespace BasketApi.Services.Implementations
     /// </summary>
     public class ProductService : IProductService
     {
+        // TODO: ProductRepository (repo pattern) for data layer separation from business logic 
         private List<ProductModel>? _products;
 
         // TODO: Remove hard dependency on HttpClient here.

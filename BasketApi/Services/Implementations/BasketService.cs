@@ -8,6 +8,7 @@ namespace BasketApi.Services.Implementations
     public class BasketService : IBasketService
     {
         // Static for persistence accross instances of BasketService
+        // BasketRepository could be used to separate layers further, ideally even defining IRepos to make it as generic as possible 
         private static readonly Dictionary<Guid, BasketModel> _baskets = new Dictionary<Guid, BasketModel>();
         private readonly IProductService _productService;
 
