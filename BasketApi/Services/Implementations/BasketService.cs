@@ -1,6 +1,8 @@
 ﻿using BasketApi.Exceptions;
 using BasketApi.Models;
+using BasketApi.Models.Repositories.Contracts;
 using BasketApi.Services.Contracts;
+using Microsoft.AspNetCore.Mvc;
 using System.Collections.Concurrent;
 
 namespace BasketApi.Services.Implementations
@@ -10,10 +12,11 @@ namespace BasketApi.Services.Implementations
         // Static for persistence accross instances of BasketService
         private static readonly Dictionary<Guid, BasketModel> _baskets = new Dictionary<Guid, BasketModel>();
         private readonly IProductService _productService;
-
-        public BasketService(IProductService productService)
+        private readonly IBasketRepository _basketRepository;
+        public BasketService(IProductService productService, IBasketRepository basketRepository)
         {
             _productService = productService;
+            _basketRepository = basketRepository;
         }
 
         /// <summary>
@@ -100,6 +103,18 @@ namespace BasketApi.Services.Implementations
             {
                 throw new BasketApiBaseException($"BasketModel with ID {basketId} not found.");
             }
+        }
+
+        public async Task<IActionResult> GetBasketById(int id)
+        {
+            var basket = await _basketRepository.GetBasketAsync(id);
+
+            if (basket == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(basket);
         }
     }
 }
